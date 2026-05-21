@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>😂 СМЕШНА КАМЕРА 😂</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Boogaloo&family=Fredoka+One&display=swap');
+
+  :root {
+    --neon-yellow: #FFE600;
+    --hot-pink: #FF2D78;
+    --electric-blue: #00F0FF;
+    --deep-purple: #1A0030;
+    --lime: #39FF14;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deep-purple);
+    font-family: 'Fredoka One', cursive;
+    color: white;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, #3D0060 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, #001F60 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 80%, #600020 0%, transparent 50%);
+    z-index: 0;
+    animation: bgPulse 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes bgPulse {
+    0% { opacity: 0.8; }
+    100% { opacity: 1; }
+  }
+
+  #header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 12px 0 6px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+  }
+
+  #header h1 {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(2rem, 6vw, 4rem);
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--neon-yellow), var(--hot-pink), var(--electric-blue), var(--lime));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: rainbowFlow 3s linear infinite;
+    text-shadow: none;
+    filter: drop-shadow(0 0 20px rgba(255,230,0,0.5));
+  }
+
+  @keyframes rainbowFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+
+  #main {
+    position: relative;
+    z-index: 5;
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    padding: 0 16px 16px;
+    min-height: 0;
+  }
+
+  #canvas-wrapper {
+    flex: 1;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    background: linear-gradient(var(--deep-purple), var(--deep-purple)) padding-box,
+                linear-gradient(45deg, var(--neon-yellow), var(--hot-pink), var(--electric-blue)) border-box;
+    box-shadow: 0 0 40px rgba(255,230,0,0.3), 0 0 80px rgba(255,45,120,0.2);
+    animation: borderGlow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes borderGlow {
+    0% { box-shadow: 0 0 30px rgba(255,230,0,0.4), 0 0 60px rgba(255,45,120,0.2); }
+    100% { box-shadow: 0 0 50px rgba(0,240,255,0.5), 0 0 100px rgba(57,255,20,0.2); }
+  }
+
+  canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+  #hidden-video { display: none; }
+
+  /* Effects panel */
+  #effects-panel {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  #effects-panel::-webkit-scrollbar { width: 4px; }
+  #effects-panel::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 2px; }
+  #effects-panel::-webkit-scrollbar-thumb { background: var(--hot-pink); border-radius: 2px; }
+
+  .effect-btn {
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    padding: 14px 10px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: rgba(255,255,255,0.07);
+    color: white;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .effect-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .effect-btn:hover::before, .effect-btn:focus::before { opacity: 1; }
+
+  .effect-btn.active {
+    border-color: var(--neon-yellow);
+    background: rgba(255,230,0,0.15);
+    box-shadow: 0 0 20px rgba(255,230,0,0.4), inset 0 0 10px rgba(255,230,0,0.1);
+    color: var(--neon-yellow);
+    transform: scale(1.03);
+  }
+
+  .effect-btn:hover { transform: scale(1.05); border-color: rgba(255,255,255,0.4); }
+  .effect-btn.active:hover { transform: scale(1.06); }
+
+  .btn-emoji { font-size: 1.6rem; display: block; margin-bottom: 3px; }
+
+  /* Start camera overlay */
+  #start-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26,0,48,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 20;
+    gap: 20px;
+    border-radius: 18px;
+  }
+
+  #start-overlay p { font-family: 'Boogaloo', cursive; font-size: 1.8rem; opacity: 0.8; text-align: center; padding: 0 20px; }
+
+  #start-btn {
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.6rem;
+    padding: 18px 44px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--hot-pink), var(--neon-yellow));
+    color: #1A0030;
+    font-weight: bold;
+    letter-spacing: 2px;
+    box-shadow: 0 0 30px rgba(255,45,120,0.6);
+    transition: all 0.2s;
+    animation: pulseBtn 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseBtn {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,45,120,0.6); }
+    50% { transform: scale(1.06); box-shadow: 0 0 50px rgba(255,230,0,0.8); }
+  }
+
+  #start-btn:hover { transform: scale(1.1) !important; }
+
+  /* Intensity slider */
+  #intensity-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.1);
+  }
+
+  #intensity-wrap label {
+    font-family: 'Boogaloo', cursive;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    white-space: nowrap;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--hot-pink), var(--neon-yellow));
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 8px rgba(255,45,120,0.6);
+    cursor: pointer;
+  }
+
+  /* Current effect label */
+  #effect-label {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.4rem;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    padding: 6px 20px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--neon-yellow);
+    letter-spacing: 2px;
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+    animation: labelPop 0.3s ease;
+  }
+
+  @keyframes labelPop {
+    0% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  }
+
+  /* TV-remote friendly focus */
+  .effect-btn:focus { outline: 3px solid var(--electric-blue); outline-offset: 3px; }
+  #start-btn:focus { outline: 3px solid var(--lime); outline-offset: 3px; }
+
+  #fullscreen-btn {
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.2rem;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 6px 16px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  #fullscreen-btn:hover { background: rgba(255,230,0,0.2); border-color: var(--neon-yellow); color: var(--neon-yellow); }
+
+  /* Laugh meter */
+  #laugh-meter {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: 'Boogaloo', cursive;
+    font-size: 2rem;
+    z-index: 10;
+    filter: drop-shadow(0 0 8px rgba(255,230,0,0.8));
+    animation: laughWobble 0.5s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes laughWobble {
+    0% { transform: rotate(-5deg) scale(1); }
+    100% { transform: rotate(5deg) scale(1.1); }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>😂 СМЕШНА КАМЕРА 😂</h1>
+  <button id="fullscreen-btn" onclick="toggleFullscreen()" tabindex="0">⛶ ЦЯЛ ЕКРАН</button>
+</div>
+
+<div id="main">
+  <div id="canvas-wrapper">
+    <canvas id="output"></canvas>
+    <video id="hidden-video" autoplay playsinline muted></video>
+    <div id="laugh-meter">😂</div>
+    <div id="effect-label">НОРМАЛЕН</div>
+
+    <div id="start-overlay">
+      <p>📹 Свържи USB камерата<br>и натисни старт!</p>
+      <button id="start-btn" onclick="startCamera()">▶ СТАРТ</button>
+    </div>
+  </div>
+
+  <div id="effects-panel">
+    <div id="intensity-wrap">
+      <label>💪 СИЛА</label>
+      <input type="range" id="intensity" min="0.2" max="3" step="0.1" value="1.2" tabindex="0">
+    </div>
+
+    <button class="effect-btn active" data-effect="fat" onclick="setEffect('fat')" tabindex="0">
+      <span class="btn-emoji">🐷</span>ДЕБЕЛ
+    </button>
+    <button class="effect-btn" data-effect="thin" onclick="setEffect('thin')" tabindex="0">
+      <span class="btn-emoji">🥢</span>КЛЬОЩАВ
+    </button>
+    <button class="effect-btn" data-effect="bigHead" onclick="setEffect('bigHead')" tabindex="0">
+      <span class="btn-emoji">🗿</span>ГОЛЯМА ГЛАВА
+    </button>
+    <button class="effect-btn" data-effect="smallHead" onclick="setEffect('smallHead')" tabindex="0">
+      <span class="btn-emoji">🫧</span>МАЛКА ГЛАВА
+    </button>
+    <button class="effect-btn" data-effect="wave" onclick="setEffect('wave')" tabindex="0">
+      <span class="btn-emoji">🌊</span>ВЪЛНА
+    </button>
+    <button class="effect-btn" data-effect="fisheye" onclick="setEffect('fisheye')" tabindex="0">
+      <span class="btn-emoji">🐟</span>РИБЕШКО ОКО
+    </button>
+    <button class="effect-btn" data-effect="stretch" onclick="setEffect('stretch')" tabindex="0">
+      <span class="btn-emoji">🦒</span>РАЗТЕГЛЕН
+    </button>
+    <button class="effect-btn" data-effect="squeeze" onclick="setEffect('squeeze')" tabindex="0">
+      <span class="btn-emoji">🪗</span>СМАЧКАН
+    </button>
+    <button class="effect-btn" data-effect="swirl" onclick="setEffect('swirl')" tabindex="0">
+      <span class="btn-emoji">🌀</span>ВИХЪР
+    </button>
+    <button class="effect-btn" data-effect="mirror" onclick="setEffect('mirror')" tabindex="0">
+      <span class="btn-emoji">🪞</span>ОГЛЕДАЛО
+    </button>
+    <button class="effect-btn" data-effect="bulge" onclick="setEffect('bulge')" tabindex="0">
+      <span class="btn-emoji">🫀</span>БАЛОН
+    </button>
+    <button class="effect-btn" data-effect="tunnel" onclick="setEffect('tunnel')" tabindex="0">
+      <span class="btn-emoji">🕳️</span>ТУНЕЛ
+    </button>
+  </div>
+</div>
+
+<script>
+const video = document.getElementById('hidden-video');
+const canvas = document.getElementById('output');
+const ctx = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+const overlay = document.getElementById('start-overlay');
+const effectLabel = document.getElementById('effect-label');
+const intensitySlider = document.getElementById('intensity');
+
+let currentEffect = 'fat';
+let animFrame;
+let offscreen, offCtx;
+let lastTime = 0;
+
+const effectNames = {
+  fat: '🐷 ДЕБЕЛ', thin: '🥢 КЛЬОЩАВ', bigHead: '🗿 ГОЛЯМА ГЛАВА',
+  smallHead: '🫧 МАЛКА ГЛАВА', wave: '🌊 ВЪЛНА', fisheye: '🐟 РИБЕШКО ОКО',
+  stretch: '🦒 РАЗТЕГЛЕН', squeeze: '🪗 СМАЧКАН', swirl: '🌀 ВИХЪР',
+  mirror: '🪞 ОГЛЕДАЛО', bulge: '🫀 БАЛОН', tunnel: '🕳️ ТУНЕЛ'
+};
+
+function setEffect(name) {
+  currentEffect = name;
+  document.querySelectorAll('.effect-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.effect === name);
+  });
+  effectLabel.textContent = effectNames[name] || name;
+  effectLabel.style.animation = 'none';
+  void effectLabel.offsetWidth;
+  effectLabel.style.animation = 'labelPop 0.3s ease';
+}
+
+async function startCamera() {
+  try {
+    // Try to get USB/external camera first (prefer non-front)
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+    } catch {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+    }
+    video.srcObject = stream;
+    await video.play();
+    overlay.style.display = 'none';
+
+    // Setup offscreen canvas
+    offscreen = document.createElement('canvas');
+    offCtx = offscreen.getContext('2d');
+
+    renderLoop();
+  } catch (err) {
+    const p = overlay.querySelector('p');
+    p.innerHTML = `⚠️ Грешка: ${err.message}<br><small>Провери разрешенията за камера</small>`;
+  }
+}
+
+function resizeCanvases() {
+  const w = video.videoWidth || 640;
+  const h = video.videoHeight || 480;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w; canvas.height = h;
+    offscreen.width = w; offscreen.height = h;
+  }
+}
+
+function renderLoop(ts = 0) {
+  animFrame = requestAnimationFrame(renderLoop);
+  if (video.readyState < 2) return;
+  if (ts - lastTime < 30) return; // ~33fps cap
+  lastTime = ts;
+
+  resizeCanvases();
+  const W = canvas.width, H = canvas.height;
+  const intensity = parseFloat(intensitySlider.value);
+
+  // Draw video to offscreen
+  offCtx.drawImage(video, 0, 0, W, H);
+  const src = offCtx.getImageData(0, 0, W, H);
+  const dst = ctx.createImageData(W, H);
+
+  applyEffect(src, dst, W, H, currentEffect, intensity);
+  ctx.putImageData(dst, 0, 0);
+}
+
+function sampleBilinear(data, W, H, sx, sy) {
+  sx = Math.max(0, Math.min(W - 1.001, sx));
+  sy = Math.max(0, Math.min(H - 1.001, sy));
+  const x0 = sx | 0, y0 = sy | 0;
+  const x1 = x0 + 1, y1 = y0 + 1;
+  const fx = sx - x0, fy = sy - y0;
+  const get = (x, y) => (Math.min(y, H-1) * W + Math.min(x, W-1)) * 4;
+  const i00 = get(x0,y0), i10 = get(x1,y0), i01 = get(x0,y1), i11 = get(x1,y1);
+  const d = data;
+  return [
+    d[i00]*(1-fx)*(1-fy) + d[i10]*fx*(1-fy) + d[i01]*(1-fx)*fy + d[i11]*fx*fy,
+    d[i00+1]*(1-fx)*(1-fy) + d[i10+1]*fx*(1-fy) + d[i01+1]*(1-fx)*fy + d[i11+1]*fx*fy,
+    d[i00+2]*(1-fx)*(1-fy) + d[i10+2]*fx*(1-fy) + d[i01+2]*(1-fx)*fy + d[i11+2]*fx*fy,
+    255
+  ];
+}
+
+function applyEffect(src, dst, W, H, effect, intensity) {
+  const sd = src.data, dd = dst.data;
+  const cx = W / 2, cy = H / 2;
+  const t = Date.now() / 1000;
+
+  for (let dy = 0; dy < H; dy++) {
+    for (let dx = 0; dx < W; dx++) {
+      const nx = (dx - cx) / cx; // -1..1
+      const ny = (dy - cy) / cy;
+      let sx = dx, sy = dy;
+
+      switch(effect) {
+        case 'fat': {
+          // Horizontal bulge — makes everyone look wide
+          const bulge = Math.pow(1 - ny*ny, 0.5) * (intensity - 1) * 0.6;
+          sx = cx + (nx / (1 + bulge * 1.4)) * cx;
+          sy = dy;
+          break;
+        }
+        case 'thin': {
+          // Horizontal squeeze
+          const squeeze = Math.pow(1 - ny*ny, 0.5) * (intensity - 1) * 0.6 + 0.4 * intensity;
+          sx = cx + nx * cx * (1 + squeeze * 0.7);
+          sy = dy;
+          break;
+        }
+        case 'bigHead': {
+          // Top half enlarged
+          if (ny < 0) {
+            const f = 1 + (intensity - 1) * 0.5 * (-ny);
+            sx = cx + (nx / f) * cx;
+            sy = cy + (ny / f) * cy;
+          } else {
+            sx = dx; sy = dy;
+          }
+          break;
+        }
+        case 'smallHead': {
+          if (ny < 0) {
+            const f = 1 - (intensity - 1) * 0.3 * (-ny);
+            sx = cx + (nx / Math.max(0.3, f)) * cx;
+            sy = cy + (ny / Math.max(0.3, f)) * cy;
+          } else {
+            sx = dx; sy = dy;
+          }
+          break;
+        }
+        case 'wave': {
+          const amp = 30 * (intensity * 0.7);
+          sx = dx + Math.sin(dy / 20 + t * 3) * amp;
+          sy = dy + Math.sin(dx / 20 + t * 2) * amp * 0.5;
+          break;
+        }
+        case 'fisheye': {
+          const r = Math.sqrt(nx*nx + ny*ny);
+          const theta = Math.atan2(ny, nx);
+          const rf = r < 1 ? Math.pow(r, 1 / (intensity * 0.6 + 0.4)) : r;
+          sx = cx + Math.cos(theta) * rf * cx;
+          sy = cy + Math.sin(theta) * rf * cy;
+          break;
+        }
+        case 'stretch': {
+          // Vertical stretch
+          const comp = 1 + (intensity - 1) * 0.5;
+          sy = cy + ny / comp * cy;
+          sx = dx;
+          break;
+        }
+        case 'squeeze': {
+          // Vertical squeeze
+          const comp2 = 1 + (intensity - 1) * 0.5;
+          sy = cy + ny * comp2 * cy;
+          sx = dx;
+          break;
+        }
+        case 'swirl': {
+          const r2 = Math.sqrt(nx*nx + ny*ny);
+          const angle = r2 * intensity * 4;
+          const cos = Math.cos(angle), sin = Math.sin(angle);
+          sx = cx + (nx*cos - ny*sin) * cx;
+          sy = cy + (nx*sin + ny*cos) * cy;
+          break;
+        }
+        case 'mirror': {
+          // Kaleidoscope horizontal mirror
+          sx = dx < cx ? dx : W - dx;
+          sy = dy;
+          break;
+        }
+        case 'bulge': {
+          const r3 = Math.sqrt(nx*nx + ny*ny);
+          if (r3 < 1) {
+            const f2 = Math.pow(r3, 1 / (intensity * 0.5 + 0.5));
+            const theta2 = Math.atan2(ny, nx);
+            sx = cx + Math.cos(theta2) * f2 * cx;
+            sy = cy + Math.sin(theta2) * f2 * cy;
+          } else { sx = dx; sy = dy; }
+          break;
+        }
+        case 'tunnel': {
+          const r4 = Math.sqrt(nx*nx + ny*ny);
+          const f3 = r4 < 0.01 ? 1 : (1 - Math.pow(r4, intensity * 0.5 + 0.5)) / r4;
+          sx = cx + nx * f3 * cx;
+          sy = cy + ny * f3 * cy;
+          break;
+        }
+      }
+
+      const pixel = sampleBilinear(sd, W, H, sx, sy);
+      const di = (dy * W + dx) * 4;
+      dd[di] = pixel[0]; dd[di+1] = pixel[1]; dd[di+2] = pixel[2]; dd[di+3] = 255;
+    }
+  }
+}
+
+function toggleFullscreen() {
+  const btn = document.getElementById('fullscreen-btn');
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => {
+      btn.textContent = '✕';
+    }).catch(() => {});
+  } else {
+    document.exitFullscreen().then(() => {
+      btn.textContent = '⛶';
+    }).catch(() => {});
+  }
+}
+
+// Keyboard/remote navigation
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const focused = document.activeElement;
+    if (focused && focused.dataset.effect) setEffect(focused.dataset.effect);
+    if (focused && focused.id === 'start-btn') startCamera();
+  }
+});
+</script>
+</body>
+</html>
